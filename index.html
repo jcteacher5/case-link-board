@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>우리 반 사례 연결</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gothic+A1:wght@400;600;800&display=swap">
+<style>
+/* Layout: one classroom board — question on top, step tabs, then either a 4-group input grid or a sorting table with two cause zones. */
+:root {
+  --bg: #f6f4ee;
+  --paper: #ffffff;
+  --ink: #23262d;
+  --muted: #6b6a66;
+  --line: #d9d4c8;
+  --navy: #1f3a5a;
+  --navy-ink: #ffffff;
+  --old: #a3520e;          /* 옛날 · 교통 */
+  --old-soft: #fbeedd;
+  --comm: #2456b8;         /* 통신 */
+  --comm-soft: #e3ebfb;
+  --need: #c98a00;         /* 사람들의 필요 · 노란 포스트잇 */
+  --need-soft: #fff4cf;
+  --tech: #1f8a5b;         /* 기술 발달 · 초록 포스트잇 */
+  --tech-soft: #dcf3e7;
+  --focus: #e0662a;
+  --shadow: 0 1px 0 rgba(40,35,20,.06), 0 6px 18px -10px rgba(40,35,20,.35);
+  --display: "Black Han Sans", "Gothic A1", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --body: "Gothic A1", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17191d; --paper: #22252b; --ink: #ecebe6; --muted: #a8a59d; --line: #3a3d44;
+    --navy: #2d4f78; --navy-ink: #ffffff;
+    --old: #f0a35c; --old-soft: #3b2a1a; --comm: #8fb2ff; --comm-soft: #1d2a45;
+    --need: #f2c24a; --need-soft: #3a3014; --tech: #5fd29c; --tech-soft: #163628;
+    --focus: #ff935e; --shadow: 0 1px 0 rgba(0,0,0,.3), 0 8px 20px -12px rgba(0,0,0,.8);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17191d; --paper: #22252b; --ink: #ecebe6; --muted: #a8a59d; --line: #3a3d44;
+  --navy: #2d4f78; --navy-ink: #ffffff;
+  --old: #f0a35c; --old-soft: #3b2a1a; --comm: #8fb2ff; --comm-soft: #1d2a45;
+  --need: #f2c24a; --need-soft: #3a3014; --tech: #5fd29c; --tech-soft: #163628;
+  --focus: #ff935e; --shadow: 0 1px 0 rgba(0,0,0,.3), 0 8px 20px -12px rgba(0,0,0,.8);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.5; }
+.wrap { max-width: 1400px; margin: 0 auto; padding-block: 18px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 16px; }
+button, input, textarea, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+/* Header */
+.eyebrow { font-size: 13px; font-weight: 800; letter-spacing: .06em; color: var(--muted); }
+.qband { background: var(--navy); color: var(--navy-ink); border-radius: 14px; padding: 16px 20px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.qtag { background: #fde68a; color: #1f3a5a; font-weight: 800; font-size: 14px; border-radius: 8px; padding: 3px 10px; white-space: nowrap; }
+.qtext { font-family: var(--display); font-size: clamp(22px, 3vw, 34px); line-height: 1.25; flex: 1 1 320px; min-width: 0; text-wrap: balance; }
+.qedit { flex: 1 1 320px; min-width: 0; background: rgba(255,255,255,.12); border: 1px dashed rgba(255,255,255,.5); border-radius: 8px; padding: 6px 10px; font-family: var(--display); font-size: clamp(20px, 2.6vw, 30px); color: var(--navy-ink); }
+.qedit::placeholder { color: rgba(255,255,255,.6); }
+
+/* Toolbar */
+.bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.steps { display: flex; gap: 6px; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+.step { border: 0; background: transparent; border-radius: 9px; padding: 10px 16px; font-weight: 800; font-size: 16px; cursor: pointer; color: var(--muted); }
+.step[aria-pressed="true"] { background: var(--navy); color: var(--navy-ink); }
+.step b { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; margin-right: 6px; font-size: 13px; background: var(--line); color: var(--ink); }
+.step[aria-pressed="true"] b { background: #fde68a; color: #1f3a5a; }
+.right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.mine { display: flex; align-items: center; gap: 8px; font-weight: 800; }
+.mine select { background: var(--paper); border: 2px solid var(--line); border-radius: 10px; padding: 8px 10px; font-weight: 800; }
+.pill { font-size: 13px; font-weight: 800; border-radius: 999px; padding: 5px 12px; border: 1px solid var(--line); background: var(--paper); color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
+.pill i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.pill.live i { background: var(--tech); }
+.pill.warn { color: var(--old); border-color: var(--old); }
+.pill.warn i { background: var(--old); }
+.progress { font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.notice { background: var(--old-soft); border: 1px solid var(--old); color: var(--ink); border-radius: 10px; padding: 10px 14px; font-size: 14px; }
+
+/* Step 1: groups */
+.groups { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.group { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 12px; align-items: stretch; min-width: 0; }
+.group .ghead { flex-direction: column; justify-content: center; align-items: flex-start; gap: 4px; }
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; min-width: 0; }
+.pair.one { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 760px) {
+  .group { grid-template-columns: minmax(0, 1fr); }
+  .group .ghead { flex-direction: row; justify-content: space-between; align-items: baseline; }
+  .pair { grid-template-columns: minmax(0, 1fr); }
+}
+.group.me { border: 3px solid var(--focus); padding: 10px; }
+.group.dim { opacity: .55; }
+.ghead { display: flex; justify-content: space-between; align-items: baseline; }
+.gname { font-family: var(--display); font-size: 24px; }
+.gstate { font-size: 13px; font-weight: 800; color: var(--muted); }
+.case { border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 6px; min-width: 0; border: 1px solid var(--line); }
+.case.transport { background: var(--old-soft); }
+.case.comm { background: var(--comm-soft); }
+.case.local { background: var(--tech-soft); }
+.kind { font-size: 13px; font-weight: 800; letter-spacing: .04em; display: flex; justify-content: space-between; }
+.case.transport .kind { color: var(--old); }
+.case.comm .kind { color: var(--comm); }
+.case.local .kind { color: var(--tech); }
+.done { color: var(--tech); }
+.field { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 6px; align-items: center; }
+.field.why { grid-template-columns: 104px minmax(0, 1fr) auto; }
+.field label { font-size: 13px; font-weight: 800; color: var(--muted); white-space: nowrap; }
+.field input, .field textarea { width: 100%; min-width: 0; background: var(--paper); border: 1.5px solid var(--line); border-radius: 8px; padding: 7px 9px; font-size: 16px; }
+.field textarea { resize: vertical; min-height: 52px; }
+.field.why textarea { border-color: var(--need); min-height: 0; height: calc(2 * 1.5em + 16px); resize: none; line-height: 1.5; }
+.field.why label, .field.why .suffix { align-self: center; }
+.field input:disabled, .field textarea:disabled { background: transparent; border-style: dashed; }
+.suffix { font-size: 13px; font-weight: 800; color: var(--muted); white-space: nowrap; }
+.localsec { display: flex; flex-direction: column; gap: 10px; }
+.localtitle { margin: 0; font-size: 17px; font-weight: 800; color: var(--tech); }
+.localrow { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.localrow h3 { margin: 0; font-size: 15px; color: var(--muted); }
+
+/* Step 2: sorting */
+.sort { display: flex; flex-direction: column; gap: 14px; }
+.howto { font-size: 15px; color: var(--muted); }
+.tray { background: var(--paper); border: 2px dashed var(--line); border-radius: 14px; padding: 12px; min-height: 120px; }
+.tray h2, .zone h2 { margin: 0 0 10px; font-size: 16px; font-weight: 800; display: flex; justify-content: space-between; gap: 8px; }
+.zones { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 760px) { .zones { grid-template-columns: minmax(0, 1fr); } }
+.zone { border-radius: 16px; padding: 14px; min-height: 280px; border: 3px solid transparent; transition: border-color .12s, transform .12s; }
+.zone.need { background: var(--need-soft); }
+.zone.tech { background: var(--tech-soft); }
+.zone h2 { font-family: var(--display); font-weight: 400; font-size: clamp(24px, 2.6vw, 34px); }
+.zone.need h2 { color: var(--need); }
+.zone.tech h2 { color: var(--tech); }
+.zone h2 small { font-family: var(--body); font-size: 14px; font-weight: 800; color: var(--muted); align-self: center; }
+.drop.over { border-color: var(--focus); }
+.tray.drop.over { border-style: solid; }
+.cards { display: flex; flex-wrap: wrap; gap: 10px; min-height: 60px; }
+.empty { color: var(--muted); font-size: 14px; align-self: center; }
+.chip { background: var(--paper); border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px; width: min(100%, 290px); box-shadow: var(--shadow); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; position: relative; text-align: left; }
+.chip.sel { outline: 3px solid var(--focus); outline-offset: 1px; }
+.chip.ghost { position: fixed; z-index: 50; pointer-events: none; transform: rotate(-2deg) scale(1.03); box-shadow: 0 18px 40px -12px rgba(0,0,0,.45); cursor: grabbing; }
+.chip.placeholder { opacity: .35; }
+.chip .tag { font-size: 12px; font-weight: 800; border-radius: 6px; padding: 1px 7px; display: inline-block; margin-bottom: 4px; }
+.chip.transport .tag { background: var(--old-soft); color: var(--old); }
+.chip.comm .tag { background: var(--comm-soft); color: var(--comm); }
+.chip.local .tag { background: var(--tech-soft); color: var(--tech); }
+.chip .t { font-weight: 800; font-size: 17px; line-height: 1.3; }
+.chip .w { margin-top: 6px; font-size: 15px; background: var(--need-soft); border-radius: 6px; padding: 4px 8px; }
+.chip .w b { color: var(--need); font-size: 12px; margin-right: 4px; }
+.chip .on { margin-top: 4px; font-size: 13px; color: var(--muted); }
+
+/* Answer */
+.answer { background: var(--paper); border: 2px solid var(--line); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.answer h2 { margin: 0; font-size: 17px; font-weight: 800; color: var(--navy); }
+:root[data-theme="dark"] .answer h2 { color: var(--comm); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .answer h2 { color: var(--comm); } }
+.answer textarea { width: 100%; min-height: 70px; border: 1.5px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--bg); font-size: clamp(18px, 2vw, 24px); font-weight: 800; resize: vertical; }
+.frame { font-size: 14px; color: var(--muted); }
+
+/* Teacher tools */
+.teacher { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
+.btn { border: 1.5px solid var(--line); background: var(--paper); border-radius: 10px; padding: 8px 14px; font-weight: 800; cursor: pointer; }
+.btn.primary { background: var(--navy); color: var(--navy-ink); border-color: var(--navy); }
+.btn.danger { color: var(--old); border-color: var(--old); }
+.pwform { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-weight: 800; }
+.pwform input { width: 96px; border: 1.5px solid var(--line); border-radius: 8px; padding: 7px 9px; background: var(--paper); }
+#pwMsg { color: var(--old); font-size: 14px; }
+.confirm { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; background: var(--old-soft); border: 1px solid var(--old); border-radius: 10px; padding: 8px 12px; font-weight: 800; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<style>[hidden]{display:none!important} body{margin:0} :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<script src="firebase-config.js"></script>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <div class="eyebrow">사회 · 시간과 공간 탐구 · 사례 연결</div>
+    <div class="qband">
+      <span class="qtag">개념적 질문</span>
+      <div class="qtext" id="qtext"></div>
+      <input class="qedit" id="qedit" hidden aria-label="개념적 질문 고치기" maxlength="80">
+    </div>
+  </header>
+
+  <div class="bar">
+    <div class="steps" role="group" aria-label="활동 단계">
+      <button class="step" id="tab1" aria-pressed="true"><b>1</b>사례 입력</button>
+      <button class="step" id="tab2" aria-pressed="false"><b>2</b>원인끼리 모으기</button>
+    </div>
+    <div class="right">
+      <span class="progress" id="progress"></span>
+      <label class="mine" for="mygroup">우리 모둠
+        <select id="mygroup">
+          <option value="all">전체 보기</option>
+          <option value="g1">1모둠</option>
+          <option value="g2">2모둠</option>
+          <option value="g3">3모둠</option>
+          <option value="g4">4모둠</option>
+        </select>
+      </label>
+      <span class="pill" id="sync"><i></i><span>연결하는 중</span></span>
+    </div>
+  </div>
+
+  <div class="notice" id="notice" hidden></div>
+
+  <section id="view1">
+    <div class="groups" id="groups"></div>
+  </section>
+
+  <section id="view2" hidden>
+    <div class="sort">
+      <div class="howto">사례를 끌어서 비슷한 이유끼리 옮겨요. 끌기 어려우면 사례를 한 번 누른 뒤, 옮길 칸을 누르세요.</div>
+      <div class="tray drop" data-bucket="pool" id="pool">
+        <h2><span>아직 모으지 않은 사례</span><span id="poolCount"></span></h2>
+        <div class="cards"></div>
+      </div>
+      <div class="zones">
+        <div class="zone need drop" data-bucket="need" id="zneed">
+          <h2><span class="zname" data-name="사람들의 필요" data-alt="첫 번째 묶음">사람들의 필요</span><small id="needCount"></small></h2>
+          <div class="cards"></div>
+        </div>
+        <div class="zone tech drop" data-bucket="tech" id="ztech">
+          <h2><span class="zname" data-name="기술 발달" data-alt="두 번째 묶음">기술 발달</span><small id="techCount"></small></h2>
+          <div class="cards"></div>
+        </div>
+      </div>
+      <div class="teacher" id="tools2" hidden>
+        <span id="resetWrap"><button class="btn danger" id="resetBuckets">모은 사례 되돌리기</button></span>
+      </div>
+    </div>
+  </section>
+
+  <section class="answer">
+    <h2>개념적 질문의 답</h2>
+    <div class="frame">사람들의 (&nbsp;&nbsp;&nbsp;&nbsp;)와 새로운 (&nbsp;&nbsp;&nbsp;&nbsp;)은 우리의 생활 모습을 변화시킨다.</div>
+    <textarea id="answer" placeholder="사례를 모두 모은 뒤, 우리가 찾은 공통점으로 답을 써요."></textarea>
+  </section>
+
+  <section class="localsec">
+    <h2 class="localtitle">활동 2 · 우리가 찾은 답이 우리 고장 문경에도 맞을까?</h2>
+    <div class="groups" id="localWrap"></div>
+  </section>
+
+  <div class="teacher" id="lock">
+    <button class="btn" id="openLock">선생님 도구</button>
+    <form class="pwform" id="lockForm" hidden>
+      <label for="pw">비밀번호</label>
+      <input id="pw" type="password" inputmode="numeric" maxlength="8" autocomplete="off">
+      <button class="btn primary" type="submit">열기</button>
+      <button class="btn" type="button" id="pwCancel">닫기</button>
+      <span id="pwMsg" role="status"></span>
+    </form>
+  </div>
+
+  <div class="teacher" id="tools" hidden>
+    <span style="color:var(--muted);font-size:13px;font-weight:800">선생님 도구</span>
+    <button class="btn" id="lockAgain">잠그기</button>
+    <button class="btn" id="editQ">질문 고치기</button>
+    <span id="clearWrap"><button class="btn danger" id="clearAll">모든 내용 지우기</button></span>
+  </div>
+</div>
+
+<script>
+(() => {
+  const GROUPS = ["g1", "g2", "g3", "g4"];
+  const KINDS = [
+    { k: "transport", label: "교통수단 변화", ph: ["예: 가마를 탔다", "예: 자동차를 탄다"] },
+    { k: "comm", label: "통신수단 변화", ph: ["예: 봉수로 소식을 전했다", "예: 휴대전화로 연락한다"] },
+  ];
+  const DEFAULT_Q = "옛날과 오늘날의 생활 모습은 왜 달라졌을까?";
+  const FIELDS = ["old", "why", "now"];
+
+  const caseIds = [];
+  GROUPS.forEach(g => KINDS.forEach(k => caseIds.push(g + "-" + k.k)));
+  caseIds.push("local");
+
+  const blank = () => ({ title: "", old: "", why: "", now: "", bucket: "pool" });
+  const state = { cases: {}, exists: {}, board: { question: DEFAULT_Q, answer: "", hideNames: false }, boardExists: false };
+  caseIds.forEach(id => { state.cases[id] = blank(); state.exists[id] = false; });
+
+  let db = null, mode = "connecting", canWrite = true, isTeacher = false;
+  const $ = s => document.querySelector(s);
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  };
+
+  function groupOf(id) { return id === "local" ? "local" : id.split("-")[0]; }
+  function kindOf(id) { return id === "local" ? "local" : id.split("-")[1]; }
+  function groupLabel(id) { return id === "local" ? "우리 고장" : groupOf(id).slice(1) + "모둠"; }
+  function kindLabel(id) { const k = kindOf(id); return k === "transport" ? "교통수단" : k === "comm" ? "통신수단" : "우리 고장 문경"; }
+  function filled(c) { return c.old.trim() && c.why.trim() && c.now.trim(); }
+  function myGroup() { return $("#mygroup").value; }
+  function editable(id) {
+    if (!canWrite) return false;
+    const mg = myGroup();
+    if (id === "local") return true;
+    return mg === "all" || mg === groupOf(id);
+  }
+
+  /* ---------- writes: one at a time per document, coalesced ---------- */
+  const pending = {}, busy = {}, timers = {};
+  function queueWrite(path, patch, delay) {
+    pending[path] = Object.assign(pending[path] || {}, patch);
+    clearTimeout(timers[path]);
+    timers[path] = setTimeout(() => flush(path), delay);
+  }
+  async function flush(path) {
+    if (!db || busy[path] || !pending[path]) return;
+    const patch = pending[path]; delete pending[path];
+    busy[path] = true;
+    try {
+      const ref = db.doc(path);
+      const isBoard = path === "board/main";
+      const id = isBoard ? null : path.split("/")[1];
+      const exists = isBoard ? state.boardExists : state.exists[id];
+      if (exists) await ref.update(patch);
+      else {
+        const full = Object.assign({}, isBoard ? state.board : state.cases[id], patch);
+        await ref.set(full);
+        if (isBoard) state.boardExists = true; else state.exists[id] = true;
+      }
+      setSync("live");
+    } catch (e) {
+      if (e && (e.code === "invalid_argument" || e.code === "permission-denied")) { canWrite = false; setSync("readonly"); renderAll(); }
+      else if (e && e.code === "quota_exceeded") { showNotice("저장 공간이 가득 차서 저장하지 못했어요. 선생님께 알려 주세요."); }
+      else { pending[path] = Object.assign(patch, pending[path] || {}); setTimeout(() => flush(path), 800 + Math.random() * 600); }
+    } finally {
+      busy[path] = false;
+      if (pending[path]) flush(path);
+    }
+  }
+  function writeCase(id, patch, delay) {
+    Object.assign(state.cases[id], patch);
+    if (mode === "live") queueWrite("cases/" + id, patch, delay);
+  }
+  function writeBoard(patch, delay) {
+    Object.assign(state.board, patch);
+    if (mode === "live") queueWrite("board/main", patch, delay);
+  }
+
+  /* ---------- status ---------- */
+  function setSync(s) {
+    const el = $("#sync"), t = el.querySelector("span");
+    el.className = "pill";
+    if (s === "live") { el.classList.add("live"); t.textContent = "실시간 공유 중"; }
+    else if (s === "readonly") { el.classList.add("warn"); t.textContent = "보기만 할 수 있어요"; }
+    else if (s === "local") { el.classList.add("warn"); t.textContent = "이 화면에서만 작동"; }
+    else t.textContent = "연결하는 중";
+  }
+  function showNotice(msg) { const n = $("#notice"); n.textContent = msg; n.hidden = !msg; }
+
+  /* ---------- step 1 ---------- */
+  function buildGroups() {
+    const wrap = $("#groups"); wrap.textContent = "";
+    GROUPS.forEach(g => {
+      const box = document.createElement("div");
+      box.className = "group"; box.dataset.group = g;
+      box.innerHTML = `<div class="ghead"><span class="gname">${g.slice(1)}모둠</span><span class="gstate"></span></div>`;
+      const pair = document.createElement("div"); pair.className = "pair";
+      KINDS.forEach(k => pair.appendChild(caseCard(g + "-" + k.k, k.label, k.ph)));
+      box.appendChild(pair);
+      wrap.appendChild(box);
+    });
+    const lr = document.createElement("div");
+    lr.className = "group"; lr.dataset.group = "local";
+    lr.innerHTML = `<div class="ghead"><span class="gname" style="font-size:20px">우리 고장</span><span class="gstate">활동 2에서 함께 입력해요</span></div>`;
+    const one = document.createElement("div"); one.className = "pair one";
+    one.appendChild(caseCard("local", "우리 고장 문경의 변화", ["예: 연탄으로 난방했다", "예: 가스로 난방한다"]));
+    lr.appendChild(one);
+    $("#localWrap").appendChild(lr);
+  }
+  function caseCard(id, label, ph) {
+    const c = document.createElement("div");
+    c.className = "case " + kindOf(id); c.dataset.id = id;
+    const fid = f => "f-" + id + "-" + f;
+    c.innerHTML = `
+      <div class="kind"><span>${label}</span><span class="done" data-done></span></div>
+      <div class="field"><label for="${fid("old")}">옛날에는</label><input id="${fid("old")}" data-f="old" maxlength="60" placeholder="${ph[0]}"></div>
+      <div class="field"><label for="${fid("now")}">오늘날에는</label><input id="${fid("now")}" data-f="now" maxlength="60" placeholder="${ph[1]}"></div>
+      <div class="field why"><label for="${fid("why")}">왜 바뀌었을까?</label><textarea id="${fid("why")}" data-f="why" maxlength="90" rows="2"></textarea><span class="suffix">때문에</span></div>`;
+    c.querySelectorAll("[data-f]").forEach(inp => {
+      inp.addEventListener("input", () => {
+        writeCase(id, { [inp.dataset.f]: inp.value }, 700);
+        renderStatus();
+      });
+      inp.addEventListener("blur", () => { if (pending["cases/" + id]) { clearTimeout(timers["cases/" + id]); flush("cases/" + id); } });
+    });
+    return c;
+  }
+  function renderStep1() {
+    document.querySelectorAll(".case").forEach(card => {
+      const id = card.dataset.id, c = state.cases[id], can = editable(id);
+      card.querySelectorAll("[data-f]").forEach(inp => {
+        const v = c[inp.dataset.f] || "";
+        if (document.activeElement !== inp && inp.value !== v) inp.value = v;
+        inp.disabled = !can;
+      });
+    });
+    const mg = myGroup();
+    document.querySelectorAll(".group").forEach(box => {
+      const g = box.dataset.group;
+      box.classList.toggle("me", mg !== "all" && g === mg);
+      box.classList.toggle("dim", mg !== "all" && g !== mg);
+    });
+    renderStatus();
+  }
+  function renderStatus() {
+    let n = 0;
+    GROUPS.forEach(g => {
+      let gn = 0;
+      KINDS.forEach(k => { const id = g + "-" + k.k; if (filled(state.cases[id])) { n++; gn++; } });
+      const box = document.querySelector(`.group[data-group="${g}"] .gstate`);
+      if (box) box.textContent = gn === 2 ? "다 썼어요" : `${gn} / 2`;
+    });
+    document.querySelectorAll(".case").forEach(card => {
+      card.querySelector("[data-done]").textContent = filled(state.cases[card.dataset.id]) ? "완성" : "";
+    });
+    $("#progress").textContent = `사례 ${n} / 8`;
+  }
+
+  /* ---------- step 2 ---------- */
+  let selected = null;
+  function sortable() { return caseIds.filter(id => id !== "local" ? true : filled(state.cases.local)); }
+  function chip(id) {
+    const c = state.cases[id];
+    const el = document.createElement("div");
+    el.className = "chip " + kindOf(id); el.dataset.id = id; el.tabIndex = 0;
+    el.setAttribute("role", "button");
+    const tag = document.createElement("span"); tag.className = "tag"; tag.textContent = `${groupLabel(id)} · ${kindLabel(id)}`;
+    const t = document.createElement("div"); t.className = "t";
+    t.textContent = (c.old || c.now) ? `${c.old || "?"} → ${c.now || "?"}` : "(아직 쓰지 않았어요)";
+    const w = document.createElement("div"); w.className = "w";
+    const wb = document.createElement("b"); wb.textContent = "왜?";
+    w.append(wb, document.createTextNode(c.why ? c.why + " 때문에" : "아직 쓰지 않았어요"));
+    el.append(tag, t, w);
+    if (selected === id) el.classList.add("sel");
+    el.setAttribute("aria-label", `${groupLabel(id)} ${kindLabel(id)} 사례: ${t.textContent}`);
+    attachDrag(el);
+    return el;
+  }
+  function renderStep2() {
+    const ids = sortable();
+    const buckets = { pool: [], need: [], tech: [] };
+    ids.forEach(id => (buckets[state.cases[id].bucket] || buckets.pool).push(id));
+    [["pool", "#pool"], ["need", "#zneed"], ["tech", "#ztech"]].forEach(([b, sel]) => {
+      const list = document.querySelector(sel + " .cards"); list.textContent = "";
+      if (!buckets[b].length) {
+        const e = document.createElement("span"); e.className = "empty";
+        e.textContent = b === "pool" ? "모든 사례를 옮겼어요." : "여기로 사례를 옮겨요.";
+        list.appendChild(e);
+      }
+      buckets[b].forEach(id => list.appendChild(chip(id)));
+    });
+    $("#poolCount").textContent = `${buckets.pool.length}개`;
+    $("#needCount").textContent = `${buckets.need.length}개`;
+    $("#techCount").textContent = `${buckets.tech.length}개`;
+  }
+  function moveTo(id, bucket) {
+    if (!canWrite) return;
+    if (state.cases[id].bucket === bucket) { selected = null; renderStep2(); return; }
+    writeCase(id, { bucket }, 0);
+    selected = null;
+    renderStep2();
+  }
+
+  /* pointer drag that works for mouse, pen and touch */
+  let drag = null;
+  function attachDrag(el) {
+    el.addEventListener("pointerdown", e => {
+      if (!canWrite || e.button > 0) return;
+      drag = { id: el.dataset.id, el, x: e.clientX, y: e.clientY, started: false, pid: e.pointerId };
+      try { el.setPointerCapture(e.pointerId); } catch (_) {}
+    });
+    el.addEventListener("pointermove", e => {
+      if (!drag || drag.el !== el) return;
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (!drag.started && Math.hypot(dx, dy) > 8) {
+        drag.started = true;
+        const r = el.getBoundingClientRect();
+        drag.ox = drag.x - r.left; drag.oy = drag.y - r.top;
+        drag.ghost = el.cloneNode(true);
+        drag.ghost.classList.add("ghost"); drag.ghost.classList.remove("sel");
+        drag.ghost.style.width = r.width + "px";
+        document.body.appendChild(drag.ghost);
+        el.classList.add("placeholder");
+      }
+      if (drag.started) {
+        drag.ghost.style.left = (e.clientX - drag.ox) + "px";
+        drag.ghost.style.top = (e.clientY - drag.oy) + "px";
+        highlight(zoneAt(e.clientX, e.clientY));
+      }
+    });
+    const end = e => {
+      if (!drag || drag.el !== el) return;
+      const d = drag; drag = null;
+      if (d.started) {
+        d.ghost.remove(); el.classList.remove("placeholder");
+        const z = zoneAt(e.clientX, e.clientY); highlight(null);
+        if (z) moveTo(d.id, z.dataset.bucket);
+      } else if (e.type === "pointerup") {
+        selected = selected === d.id ? null : d.id;
+        renderStep2();
+      }
+    };
+    el.addEventListener("pointerup", end);
+    el.addEventListener("pointercancel", end);
+    el.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selected = selected === el.dataset.id ? null : el.dataset.id; renderStep2(); }
+      const map = { "1": "need", "2": "tech", "0": "pool" };
+      if (map[e.key]) moveTo(el.dataset.id, map[e.key]);
+    });
+  }
+  function zoneAt(x, y) {
+    const hit = document.elementFromPoint(x, y);
+    return hit ? hit.closest(".drop") : null;
+  }
+  function highlight(z) { document.querySelectorAll(".drop").forEach(d => d.classList.toggle("over", d === z)); }
+  document.querySelectorAll(".drop").forEach(zone => {
+    zone.addEventListener("click", e => {
+      if (!selected || e.target.closest(".chip")) return;
+      moveTo(selected, zone.dataset.bucket);
+    });
+  });
+
+  /* ---------- board ---------- */
+  function renderBoard() {
+    $("#qtext").textContent = state.board.question || DEFAULT_Q;
+    const a = $("#answer");
+    if (document.activeElement !== a && a.value !== (state.board.answer || "")) a.value = state.board.answer || "";
+    a.disabled = !canWrite;
+    const qe = $("#qedit");
+    if (document.activeElement !== qe) qe.value = state.board.question || DEFAULT_Q;
+  }
+  $("#answer").addEventListener("input", e => writeBoard({ answer: e.target.value }, 700));
+  $("#qedit").addEventListener("input", e => { writeBoard({ question: e.target.value }, 700); $("#qtext").textContent = e.target.value; });
+  $("#editQ").addEventListener("click", () => {
+    const qe = $("#qedit"), editing = qe.hidden;
+    qe.hidden = !editing; $("#qtext").hidden = editing;
+    $("#editQ").textContent = editing ? "질문 고치기 끝" : "질문 고치기";
+    if (editing) qe.focus();
+  });
+
+  function confirmIn(wrapSel, label, onYes) {
+    const wrap = $(wrapSel), orig = wrap.innerHTML;
+    wrap.innerHTML = "";
+    const box = document.createElement("span"); box.className = "confirm";
+    box.append(document.createTextNode(label));
+    const yes = document.createElement("button"); yes.className = "btn danger"; yes.textContent = "네, 할게요";
+    const no = document.createElement("button"); no.className = "btn"; no.textContent = "아니요";
+    box.append(yes, no); wrap.appendChild(box);
+    const restore = () => { wrap.innerHTML = orig; bindTeacherButtons(); };
+    yes.addEventListener("click", () => { onYes(); restore(); });
+    no.addEventListener("click", restore);
+    no.focus();
+  }
+  function bindTeacherButtons() {
+    const rb = $("#resetBuckets");
+    if (rb) rb.onclick = () => confirmIn("#resetWrap", "모든 사례를 '아직 모으지 않은 사례'로 되돌릴까요?", () => {
+      caseIds.forEach(id => { if (state.cases[id].bucket !== "pool") writeCase(id, { bucket: "pool" }, 0); });
+      renderStep2();
+    });
+    const ca = $("#clearAll");
+    if (ca) ca.onclick = () => confirmIn("#clearWrap", "모든 모둠의 사례와 답을 지울까요? 되돌릴 수 없어요.", () => {
+      caseIds.forEach(id => writeCase(id, blank(), 0));
+      writeBoard({ answer: "", hideNames: false }, 0);
+      renderAll();
+    });
+  }
+  bindTeacherButtons();
+
+  /* ---------- tabs & group picker ---------- */
+  function setStep(n) {
+    $("#tab1").setAttribute("aria-pressed", n === 1); $("#tab2").setAttribute("aria-pressed", n === 2);
+    $("#view1").hidden = n !== 1; $("#view2").hidden = n !== 2;
+    store.set("caselink.step", String(n));
+    selected = null; renderAll();
+  }
+  $("#tab1").addEventListener("click", () => setStep(1));
+  $("#tab2").addEventListener("click", () => setStep(2));
+  $("#mygroup").addEventListener("change", () => { store.set("caselink.group", myGroup()); renderAll(); });
+  const savedGroup = store.get("caselink.group");
+  if (savedGroup) $("#mygroup").value = savedGroup;
+
+  function renderAll() { renderStep1(); renderStep2(); renderBoard(); }
+
+  /* ---------- teacher lock (password 1234) ---------- */
+  const TEACHER_PW = "1234";
+  function setUnlocked(on) {
+    $("#tools").hidden = !on; $("#tools2").hidden = !on;
+    $("#lock").hidden = on;
+    $("#lockForm").hidden = true; $("#openLock").hidden = false;
+    $("#pw").value = ""; $("#pwMsg").textContent = "";
+    if (!on) {
+      const qe = $("#qedit");
+      if (!qe.hidden) { qe.hidden = true; $("#qtext").hidden = false; $("#editQ").textContent = "질문 고치기"; }
+    }
+    try { sessionStorage.setItem("caselink.unlocked", on ? "1" : "0"); } catch (e) {}
+  }
+  $("#openLock").addEventListener("click", () => { $("#openLock").hidden = true; $("#lockForm").hidden = false; $("#pw").focus(); });
+  $("#pwCancel").addEventListener("click", () => { $("#lockForm").hidden = true; $("#openLock").hidden = false; $("#pw").value = ""; $("#pwMsg").textContent = ""; });
+  $("#lockForm").addEventListener("submit", e => {
+    e.preventDefault();
+    if ($("#pw").value === TEACHER_PW) setUnlocked(true);
+    else { $("#pwMsg").textContent = "비밀번호가 맞지 않아요."; $("#pw").value = ""; $("#pw").focus(); }
+  });
+  $("#lockAgain").addEventListener("click", () => setUnlocked(false));
+  let wasUnlocked = false;
+  try { wasUnlocked = sessionStorage.getItem("caselink.unlocked") === "1"; } catch (e) {}
+  setUnlocked(wasUnlocked);
+
+  buildGroups();
+  setStep(store.get("caselink.step") === "2" ? 2 : 1);
+
+  /* ---------- connect ---------- */
+  function goLocal() {
+    if (mode === "live") return;
+    mode = "local"; setSync("local");
+    showNotice("실시간 공유가 연결되지 않았어요(Firebase 설정 확인 필요). 지금은 이 화면에서만 입력과 옮기기가 되고, 다른 태블릿과 공유되지 않아요.");
+    renderAll();
+  }
+  const fallbackTimer = setTimeout(goLocal, 11000);
+
+  (async () => {
+    const cfg = window.FIREBASE_CONFIG;
+    if (!cfg || !cfg.projectId) { clearTimeout(fallbackTimer); goLocal(); return; }
+    try {
+      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+      const fs = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+      const fdb = fs.getFirestore(initializeApp(cfg));
+      db = {
+        doc(path) {
+          const ref = fs.doc(fdb, path);
+          return {
+            set: d => fs.setDoc(ref, d, { merge: true }),
+            update: d => fs.setDoc(ref, d, { merge: true }),
+            onSnapshot: (next, err) => fs.onSnapshot(ref, s => next({ exists: s.exists(), data: () => s.data() }), err),
+          };
+        },
+        collection(path) {
+          const ref = fs.collection(fdb, path);
+          return { onSnapshot: (next, err) => fs.onSnapshot(ref, s => next({ docs: s.docs.map(d => ({ id: d.id, data: () => d.data() })) }), err) };
+        },
+      };
+    } catch (err) { clearTimeout(fallbackTimer); goLocal(); return; }
+    clearTimeout(fallbackTimer);
+    mode = "live";
+    showNotice("");
+    setSync("live");
+
+    db.collection("cases").onSnapshot(snap => {
+      snap.docs.forEach(d => {
+        if (!caseIds.includes(d.id)) return;
+        const data = d.data() || {};
+        const local = state.cases[d.id];
+        FIELDS.concat("bucket").forEach(f => {
+          if (pending["cases/" + d.id] && f in pending["cases/" + d.id]) return;
+          if (typeof data[f] === "string") local[f] = data[f];
+        });
+        state.exists[d.id] = true;
+      });
+      if (!drag) renderAll();
+    }, () => { setSync("local"); showNotice("실시간 연결이 끊겼어요. 페이지를 새로 고쳐 주세요."); });
+
+    db.doc("board/main").onSnapshot(snap => {
+      if (snap.exists) {
+        const data = snap.data() || {};
+        ["question", "answer"].forEach(f => {
+          if (pending["board/main"] && f in pending["board/main"]) return;
+          if (typeof data[f] === "string") state.board[f] = data[f];
+        });
+        if (!(pending["board/main"] && "hideNames" in pending["board/main"]) && typeof data.hideNames === "boolean") state.board.hideNames = data.hideNames;
+        state.boardExists = true;
+      }
+      if (!drag) renderAll();
+    }, () => {});
+  })();
+})();
+</script>
+
+</body>
+</html>

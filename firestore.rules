@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 사례 연결 보드: 사례 9칸(1~4모둠 교통·통신 + 우리 고장)과 보드 문서 하나만 허용
+    match /cases/{id} {
+      allow read: if true;
+      allow write: if id in ['g1-transport','g1-comm','g2-transport','g2-comm',
+                             'g3-transport','g3-comm','g4-transport','g4-comm','local']
+                   && request.resource.data.keys().hasOnly(['title','old','why','now','bucket'])
+                   && request.resource.data.get('old','').size() <= 60
+                   && request.resource.data.get('now','').size() <= 60
+                   && request.resource.data.get('why','').size() <= 90
+                   && request.resource.data.get('bucket','pool') in ['pool','need','tech'];
+    }
+    match /board/main {
+      allow read: if true;
+      allow write: if request.resource.data.keys().hasOnly(['question','answer','hideNames'])
+                   && request.resource.data.get('question','').size() <= 80
+                   && request.resource.data.get('answer','').size() <= 500;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
