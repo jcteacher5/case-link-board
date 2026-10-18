@@ -639,7 +639,7 @@ button, input, textarea, select { font: inherit; color: inherit; }
   /* ---------- tabs & group picker ---------- */
   function setStep(n) {
     [1, 2, 3].forEach(k => { $("#tab" + k).setAttribute("aria-pressed", n === k); $("#view" + k).hidden = n !== k; });
-    $("#answerSec").hidden = n === 3; $("#localSec").hidden = n === 3;
+    $("#answerSec").hidden = n !== 2; $("#localSec").hidden = n !== 2;
     store.set("caselink.step", String(n));
     selected = null; renderAll();
   }
