@@ -18,6 +18,15 @@ service cloud.firestore {
                    && request.resource.data.get('question','').size() <= 80
                    && request.resource.data.get('answer','').size() <= 500;
     }
+    // 성찰하기: 학생 번호(s01~s17)별 문서, 답 3칸만 허용
+    match /reflections/{id} {
+      allow read: if true;
+      allow write: if id.matches('s[0-9]{2}')
+                   && request.resource.data.keys().hasOnly(['a1','a2','a3'])
+                   && request.resource.data.get('a1','').size() <= 300
+                   && request.resource.data.get('a2','').size() <= 300
+                   && request.resource.data.get('a3','').size() <= 300;
+    }
     match /{document=**} {
       allow read, write: if false;
     }
