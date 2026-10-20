@@ -501,6 +501,7 @@ button, input, textarea, select { font: inherit; color: inherit; }
     return el;
   }
   function renderStep2() {
+    clearGhosts();
     const ids = sortable();
     const buckets = { pool: [], need: [], tech: [] };
     ids.forEach(id => (buckets[state.cases[id].bucket] || buckets.pool).push(id));
@@ -525,53 +526,66 @@ button, input, textarea, select { font: inherit; color: inherit; }
     renderStep2();
   }
 
-  /* pointer drag that works for mouse, pen and touch */
-  let drag = null;
+  /* pointer drag that works for mouse, pen and touch — several fingers at once on a board */
+  const drags = new Map();   // pointerId -> drag state
+  let drag = null;           // kept for render guards: truthy while any drag is active
+  function syncDragFlag() { drag = drags.size ? true : null; }
+  function clearGhosts() {
+    if (drags.size) return;
+    document.querySelectorAll(".chip.ghost").forEach(g => g.remove());
+    document.querySelectorAll(".chip.placeholder").forEach(c => c.classList.remove("placeholder"));
+    highlight(null);
+  }
   function attachDrag(el) {
     el.addEventListener("pointerdown", e => {
       if (!canWrite || e.button > 0) return;
-      drag = { id: el.dataset.id, el, x: e.clientX, y: e.clientY, started: false, pid: e.pointerId };
-      try { el.setPointerCapture(e.pointerId); } catch (_) {}
+      e.preventDefault();
+      drags.set(e.pointerId, { id: el.dataset.id, el, x: e.clientX, y: e.clientY, started: false });
+      syncDragFlag();
     });
-    el.addEventListener("pointermove", e => {
-      if (!drag || drag.el !== el) return;
-      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-      if (!drag.started && Math.hypot(dx, dy) > 8) {
-        drag.started = true;
-        const r = el.getBoundingClientRect();
-        drag.ox = drag.x - r.left; drag.oy = drag.y - r.top;
-        drag.ghost = el.cloneNode(true);
-        drag.ghost.classList.add("ghost"); drag.ghost.classList.remove("sel");
-        drag.ghost.style.width = r.width + "px";
-        document.body.appendChild(drag.ghost);
-        el.classList.add("placeholder");
-      }
-      if (drag.started) {
-        drag.ghost.style.left = (e.clientX - drag.ox) + "px";
-        drag.ghost.style.top = (e.clientY - drag.oy) + "px";
-        highlight(zoneAt(e.clientX, e.clientY));
-      }
-    });
-    const end = e => {
-      if (!drag || drag.el !== el) return;
-      const d = drag; drag = null;
-      if (d.started) {
-        d.ghost.remove(); el.classList.remove("placeholder");
-        const z = zoneAt(e.clientX, e.clientY); highlight(null);
-        if (z) moveTo(d.id, z.dataset.bucket);
-      } else if (e.type === "pointerup") {
-        selected = selected === d.id ? null : d.id;
-        renderStep2();
-      }
-    };
-    el.addEventListener("pointerup", end);
-    el.addEventListener("pointercancel", end);
     el.addEventListener("keydown", e => {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selected = selected === el.dataset.id ? null : el.dataset.id; renderStep2(); }
       const map = { "1": "need", "2": "tech", "0": "pool" };
       if (map[e.key]) moveTo(el.dataset.id, map[e.key]);
     });
   }
+  document.addEventListener("pointermove", e => {
+    const d = drags.get(e.pointerId); if (!d) return;
+    if (!d.started && Math.hypot(e.clientX - d.x, e.clientY - d.y) > 8) {
+      d.started = true;
+      const r = d.el.getBoundingClientRect();
+      d.ox = d.x - r.left; d.oy = d.y - r.top;
+      d.ghost = d.el.cloneNode(true);
+      d.ghost.classList.add("ghost"); d.ghost.classList.remove("sel", "placeholder");
+      d.ghost.style.width = r.width + "px";
+      document.body.appendChild(d.ghost);
+      d.el.classList.add("placeholder");
+    }
+    if (d.started) {
+      e.preventDefault();
+      d.ghost.style.left = (e.clientX - d.ox) + "px";
+      d.ghost.style.top = (e.clientY - d.oy) + "px";
+      highlight(zoneAt(e.clientX, e.clientY));
+    }
+  }, { passive: false });
+  function endDrag(e) {
+    const d = drags.get(e.pointerId); if (!d) return;
+    drags.delete(e.pointerId); syncDragFlag();
+    if (d.ghost) d.ghost.remove();
+    d.el.classList.remove("placeholder");
+    highlight(null);
+    if (d.started) {
+      const z = e.type === "pointerup" ? zoneAt(e.clientX, e.clientY) : null;
+      if (z) moveTo(d.id, z.dataset.bucket); else renderStep2();
+    } else if (e.type === "pointerup") {
+      selected = selected === d.id ? null : d.id;
+      renderStep2();
+    }
+    if (!drags.size) { clearGhosts(); renderAll(); }
+  }
+  document.addEventListener("pointerup", endDrag);
+  document.addEventListener("pointercancel", endDrag);
+  window.addEventListener("blur", () => { drags.forEach(d => { if (d.ghost) d.ghost.remove(); }); drags.clear(); syncDragFlag(); clearGhosts(); });
   function zoneAt(x, y) {
     const hit = document.elementFromPoint(x, y);
     return hit ? hit.closest(".drop") : null;
